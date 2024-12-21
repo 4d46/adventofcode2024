@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello, day 01!")
+	fmt.Println("Hello, day 02!")
 
 	// Part 1
 	// Load the input data
