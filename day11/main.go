@@ -12,6 +12,12 @@ import (
 
 type stone int
 
+var lookupTable map[string]int
+
+// Still having trouble getting my head round memoisation.  My first attempt a half way house, but not fast enough
+// Researched and found this https://github.com/jimlawless/aoc2024/blob/main/day_11/day_11b.go
+// Reworked to use that approach instead and hopefully get my head around it
+
 func main() {
 	fmt.Println("Hello, day 05!")
 
@@ -28,8 +34,10 @@ func main() {
 		initialStones = append(initialStones, stone(value))
 	}
 
-	// Build a lookup table for the stone numbers
-	lookupTable := make(map[stone][]stone)
+	// Build a lookup table to support memoisation
+	// One map for each level.  As the recursion dives to the bottom it will populate the number of children
+	// at each level, reducing the number of lookups required
+	lookupTable = make(map[string]int)
 
 	// Loop over the first few Blinks to check how it works
 	for blinks := 1; blinks <= 25; blinks++ {
@@ -38,8 +46,9 @@ func main() {
 		// Loop over the stones
 		for _, s := range initialStones {
 			// Follow the stone
-			stoneCount += followStone(blinks-1, s, lookupTable)
+			stoneCount += followStone(blinks, s)
 		}
+		// spew.Dump(lookupTable)
 
 		fmt.Printf("Part 1: Blinks %d: %d\n", blinks, stoneCount)
 	}
@@ -52,56 +61,74 @@ func main() {
 	// Loop over the stones
 	for _, s := range initialStones {
 		// Follow the stone
-		stoneCount += followStone(blinks-1, s, lookupTable)
+		stoneCount += followStone(blinks, s)
 	}
 
 	fmt.Printf("Part 2: Blinks %d: %d\n", blinks, stoneCount)
 
 }
 
-func followStone(depth int, stone stone, lookupTable map[stone][]stone) int {
-	// Check if the stone is in the lookup table, otherwise calculate it
-	if _, ok := lookupTable[stone]; !ok {
-		// Calculate the next stones
-		calcStones := deriveNextStones(stone)
-		// Add the stones to the lookup table
-		lookupTable[stone] = calcStones
-	}
-
-	nextStones := lookupTable[stone]
-
+func followStone(depth int, st stone) int {
+	// If we have hit the bottom of the recursion, we are delaing with a single stone
+	// Return 1
 	if depth == 0 {
-		return len(nextStones)
+		return 1
 	}
 
-	// Follow the stones
-	totalStones := 0
-	for _, s := range nextStones {
-		totalStones += followStone(depth-1, s, lookupTable)
+	// Lets see if we have already calculated the number of child stones for this stone at this depth
+	stoneKey := makeKey(st, depth)
+	if _, ok := lookupTable[stoneKey]; ok {
+		// We do, so return the number of child stones
+		return lookupTable[stoneKey]
 	}
-	return totalStones
-}
 
-func deriveNextStones(s stone) []stone {
-	// Calculate the next stones
-	nextStones := make([]stone, 0)
-
-	if s == 0 {
-		// Stone is 0 so replace with a stone with 1
-		nextStones = append(nextStones, 1)
-	} else if (int(math.Log10(float64(s))+1) % 2) == 0 {
+	// If stone is 0, continue with 1
+	if st == 0 {
+		stones := followStone(depth-1, 1)
+		lookupTable[stoneKey] = stones
+		return stones
+	} else if (int(math.Log10(float64(st))+1) % 2) == 0 {
 		// Stone has an even number of digits, so split it into 2 stones
-		stoneStr := strconv.Itoa(int(s))
+		stoneStr := fmt.Sprintf("%d", st)
 		var newStone [2]int
 		newStone[0], _ = strconv.Atoi(stoneStr[:len(stoneStr)/2])
 		newStone[1], _ = strconv.Atoi(stoneStr[len(stoneStr)/2:])
-		nextStones = append(nextStones, stone(newStone[0]), stone(newStone[1]))
+		// Calculate the number of stones for each of the new stones
+		stones := followStone(depth-1, stone(newStone[0])) + followStone(depth-1, stone(newStone[1]))
+		lookupTable[stoneKey] = stones
+		return stones
 	} else {
 		// Otherwise, replace stone with a stone with 2024 times the value
-		nextStones = append(nextStones, s*2024)
+		stones := followStone(depth-1, st*2024)
+		lookupTable[stoneKey] = stones
+		return stones
 	}
-	return nextStones
 }
+
+func makeKey(stone stone, depth int) string {
+	return fmt.Sprintf("%d-%d", stone, depth)
+}
+
+// func deriveNextStones(s stone) []stone {
+// 	// Calculate the next stones
+// 	nextStones := make([]stone, 0)
+
+// 	if s == 0 {
+// 		// Stone is 0 so replace with a stone with 1
+// 		nextStones = append(nextStones, 1)
+// 	} else if (int(math.Log10(float64(s))+1) % 2) == 0 {
+// 		// Stone has an even number of digits, so split it into 2 stones
+// 		stoneStr := strconv.Itoa(int(s))
+// 		var newStone [2]int
+// 		newStone[0], _ = strconv.Atoi(stoneStr[:len(stoneStr)/2])
+// 		newStone[1], _ = strconv.Atoi(stoneStr[len(stoneStr)/2:])
+// 		nextStones = append(nextStones, stone(newStone[0]), stone(newStone[1]))
+// 	} else {
+// 		// Otherwise, replace stone with a stone with 2024 times the value
+// 		nextStones = append(nextStones, s*2024)
+// 	}
+// 	return nextStones
+// }
 
 // LoadInputData reads the input file and returns a slice of strings
 func LoadInputData(filename string) []string {
