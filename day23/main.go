@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello, day 22!")
+	fmt.Println("Hello, day 23!")
 
 	// Part 1
 	// Load the input data

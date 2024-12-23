@@ -19,7 +19,7 @@ var lookupTable map[string]int
 // Reworked to use that approach instead and hopefully get my head around it
 
 func main() {
-	fmt.Println("Hello, day 05!")
+	fmt.Println("Hello, day 11!")
 
 	// Part 1
 	// Load the input data
