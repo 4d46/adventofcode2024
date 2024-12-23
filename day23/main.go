@@ -157,9 +157,11 @@ func main() {
 			}
 
 			// This should be a set of interlinked computers, remember the size of the set for all the nodes in the set
-			for node := range computerSets {
-				nodeMaxSetSize[node] = len(computerSets)
-			}
+			// Hmm, not sure if this is always the case or we were just lucky on the ordering of the nodes
+			// After running doesn't really seem to speed things up so ignoring
+			// for node := range computerSets {
+			// 	nodeMaxSetSize[node] = len(computerSets)
+			// }
 
 			// Remember the largest set size and the key
 			if len(computerSets) > largestSetSize {
